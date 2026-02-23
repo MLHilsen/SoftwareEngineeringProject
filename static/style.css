@@ -1,0 +1,40 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.btn {
+    border-radius: 5px;
+}
+
+.alert {
+    border-radius: 5px;
+}
+
+.navbar {
+    margin-bottom: 20px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    border-color: #80bdff;
+}

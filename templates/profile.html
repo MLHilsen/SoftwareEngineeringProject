@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-person-circle"></i> My Profile</h3>
+            </div>
+            <div class="card-body p-4">
+                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view" type="button" role="tab">
+                            <i class="bi bi-eye"></i> View Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit" type="button" role="tab">
+                            <i class="bi bi-pencil"></i> Edit Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                            <i class="bi bi-shield-lock"></i> Security
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
+                            <i class="bi bi-session"></i> Active Sessions
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-4" id="profileTabsContent">
+                    <!-- View Profile Tab -->
+                    <div class="tab-pane fade show active" id="view" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-3 text-center">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-4 d-inline-block">
+                                    <i class="bi bi-person-circle display-1 text-primary"></i>
+                                </div>
+                                <h4 class="mt-3">{{ user.full_name }}</h4>
+                                <span class="badge {% if user.is_admin() %}bg-danger{% else %}bg-info{% endif %} p-2">
+                                    {{ user.role|upper }}
+                                </span>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5>Personal Information</h5>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <th width="30%"><i class="bi bi-person"></i> Full Name:</th>
+                                                <td>{{ user.full_name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><i class="bi bi-envelope"></i> Email:</th>
+                                                <td>{{ user.email }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><i class="bi bi-telephone"></i> Phone:</th>
+                                                <td>{{ user.phone if user.phone else '<span class="text-muted">Not provided</span>'|safe }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><i class="bi bi-geo-alt"></i> Address:</th>
+                                                <td>{{ user.address if user.address else '<span class="text-muted">Not provided</span>'|safe }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><i class="bi bi-calendar"></i> Member Since:</th>
+                                                <td>{{ user.created_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th><i class="bi bi-clock-history"></i> Last Login:</th>
+                                                <td>
+                                                    {% if user.last_login %}
+                                                        {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
+                                                    {% else %}
+                                                        <span class="text-muted">First login</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th><i class="bi bi-arrow-repeat"></i> Last Updated:</th>
+                                                <td>
+                                                    {% if user.updated_at %}
+                                                        {{ user.updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                                    {% else %}
+                                                        <span class="text-muted">Never</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Profile Tab -->
+                    <div class="tab-pane fade" id="edit" role="tabpanel">
+                        <form method="POST" action="{{ url_for('update_profile') }}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="full_name" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           value="{{ user.full_name }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ user.email }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="{{ user.phone or '' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="2">{{ user.address or '' }}</textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i> Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Security Tab -->
+                    <div class="tab-pane fade" id="security" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0"><i class="bi bi-key"></i> Change Password</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form method="POST" action="{{ url_for('change_password') }}">
+                                            <div class="mb-3">
+                                                <label for="current_password" class="form-label">Current Password</label>
+                                                <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_password" class="form-label">New Password</label>
+                                                <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
+                                                <small class="text-muted">Minimum 6 characters</small>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="bi bi-arrow-repeat"></i> Update Password
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Account Security</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Password Age
+                                                <span class="badge bg-success rounded-pill">
+                                                    {% if user.updated_at %}
+                                                        {{ (now - user.updated_at).days }} days
+                                                    {% else %}
+                                                        {{ (now - user.created_at).days }} days
+                                                    {% endif %}
+                                                </span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Two-Factor Authentication
+                                                <span class="badge bg-secondary">Coming Soon</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Account Age
+                                                <span class="badge bg-info rounded-pill">{{ (now - user.created_at).days }} days</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Sessions Tab -->
+                    <div class="tab-pane fade" id="sessions" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="bi bi-session"></i> Active Sessions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>IP Address</th>
+                                                <th>Device</th>
+                                                <th>Logged In</th>
+                                                <th>Expires</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for session in user.sessions %}
+                                            <tr>
+                                                <td>{{ session.ip_address }}</td>
+                                                <td>
+                                                    {% if 'Mobile' in session.user_agent %}
+                                                        <i class="bi bi-phone"></i>
+                                                    {% elif 'Windows' in session.user_agent %}
+                                                        <i class="bi bi-windows"></i>
+                                                    {% elif 'Mac' in session.user_agent %}
+                                                        <i class="bi bi-apple"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-laptop"></i>
+                                                    {% endif %}
+                                                    {{ session.user_agent[:50] }}...
+                                                </td>
+                                                <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>{{ session.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>
+                                                    {% if session.expires_at > now %}
+                                                        <span class="badge bg-success">Active</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Expired</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No active sessions found</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

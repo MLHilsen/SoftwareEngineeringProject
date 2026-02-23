@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-shield-lock"></i> Admin Panel</h3>
+                <span class="badge bg-light text-dark">Total Users: {{ users|length }}</span>
+            </div>
+            <div class="card-body">
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Total Users</h6>
+                                        <h2 class="mt-2 mb-0">{{ users|length }}</h2>
+                                    </div>
+                                    <i class="bi bi-people fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Active Users</h6>
+                                        <h2 class="mt-2 mb-0">{{ users|selectattr('is_active', 'equalto', true)|list|length }}</h2>
+                                    </div>
+                                    <i class="bi bi-toggle-on fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Admins</h6>
+                                        <h2 class="mt-2 mb-0">{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</h2>
+                                    </div>
+                                    <i class="bi bi-shield fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Active Sessions</h6>
+                                        <h2 class="mt-2 mb-0">{{ sessions|length }}</h2>
+                                    </div>
+                                    <i class="bi bi-session fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                            <i class="bi bi-people"></i> Users Management
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
+                            <i class="bi bi-session"></i> Active Sessions
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+                            <i class="bi bi-graph-up"></i> Statistics
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="adminTabsContent">
+                    <!-- Users Management Tab -->
+                    <div class="tab-pane fade show active" id="users" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Full Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.user_id }}</td>
+                                        <td>
+                                            <i class="bi bi-person-circle"></i>
+                                            {{ user.full_name }}
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-info{% endif %}">
+                                                <i class="bi {% if user.role == 'admin' %}bi-shield{% else %}bi-person{% endif %}"></i>
+                                                {{ user.role }}
+                                            </span>
+                                        </td>
+                                        <td>{{ user.phone or '—' }}</td>
+                                        <td>
+                                            {% if user.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {% if user.last_login %}
+                                                {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                                            {% else %}
+                                                <span class="text-muted">Never</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                {% if user.user_id != current_user.user_id %}
+                                                <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.user_id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm {% if user.is_active %}btn-warning{% else %}btn-success{% endif %}" 
+                                                            title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                                        <i class="bi {% if user.is_active %}bi-pause{% else %}bi-play{% endif %}"></i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <form method="POST" action="{{ url_for('change_user_role', user_id=user.user_id) }}" class="d-inline">
+                                                    <input type="hidden" name="role" value="{% if user.role == 'admin' %}user{% else %}admin{% endif %}">
+                                                    <button type="submit" class="btn btn-sm btn-info" 
+                                                            title="Change to {% if user.role == 'admin' %}User{% else %}Admin{% endif %}">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </button>
+                                                </form>
+                                                {% else %}
+                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                    <i class="bi bi-person"></i> Current
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Sessions Tab -->
+                    <div class="tab-pane fade" id="sessions" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>User</th>
+                                        <th>IP Address</th>
+                                        <th>Device / Browser</th>
+                                        <th>Started</th>
+                                        <th>Expires</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in sessions %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-person"></i>
+                                            {{ session.user.full_name }}
+                                            <br>
+                                            <small class="text-muted">{{ session.user.email }}</small>
+                                        </td>
+                                        <td>{{ session.ip_address }}</td>
+                                        <td>
+                                            {% if 'Mobile' in session.user_agent %}
+                                                <i class="bi bi-phone"></i>
+                                            {% elif 'Windows' in session.user_agent %}
+                                                <i class="bi bi-windows"></i>
+                                            {% elif 'Mac' in session.user_agent %}
+                                                <i class="bi bi-apple"></i>
+                                            {% elif 'Linux' in session.user_agent %}
+                                                <i class="bi bi-ubuntu"></i>
+                                            {% else %}
+                                                <i class="bi bi-laptop"></i>
+                                            {% endif %}
+                                            {{ session.user_agent[:50] }}...
+                                        </td>
+                                        <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{{ session.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if session.expires_at > now %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Expired</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No active sessions found</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistics Tab -->
+                    <div class="tab-pane fade" id="stats" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="bi bi-pie-chart"></i> User Distribution</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="userChart" style="height: 300px; width: 100%;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0"><i class="bi bi-calendar"></i> Recent Activity</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-group">
+                                            {% for user in users[:5] %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                {{ user.full_name }}
+                                                <span class="badge bg-primary rounded-pill">
+                                                    {% if user.last_login %}
+                                                        {{ user.last_login.strftime('%Y-%m-%d') }}
+                                                    {% else %}
+                                                        Never
+                                                    {% endif %}
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js for statistics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if the canvas element exists
+    const canvas = document.getElementById('userChart');
+    if (!canvas) {
+        console.error('Canvas element not found');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Get statistics from Flask variables
+    const totalUsers = {{ users|length|tojson }};
+    const activeUsers = {{ users|selectattr('is_active', 'equalto', true)|list|length|tojson }};
+    const admins = {{ users|selectattr('role', 'equalto', 'admin')|list|length|tojson }};
+    
+    // Calculate derived values
+    const inactiveUsers = totalUsers - activeUsers;
+    const regularUsers = totalUsers - admins;
+    
+    // Debug output
+    console.log('Chart Data:', {
+        totalUsers,
+        activeUsers,
+        inactiveUsers,
+        admins,
+        regularUsers
+    });
+    
+    // Create chart
+    try {
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Active Users', 'Inactive Users', 'Admins', 'Regular Users'],
+                datasets: [{
+                    data: [activeUsers, inactiveUsers, admins, regularUsers],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // success green
+                        'rgba(108, 117, 125, 0.8)', // secondary gray
+                        'rgba(220, 53, 69, 0.8)',   // danger red
+                        'rgba(23, 162, 184, 0.8)'   // info blue
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(108, 117, 125, 1)',
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(23, 162, 184, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error creating chart:', error);
+    }
+});
+</script>
+
+<!-- Add this CSS to fix canvas display -->
+<style>
+canvas {
+    max-width: 100%;
+    height: auto !important;
+}
+</style>
+{% endblock %}
