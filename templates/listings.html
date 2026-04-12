@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .listings-hero { background:linear-gradient(135deg,#2d2d2d,#4a3728 60%,#8b5e3c); padding:48px 0 36px; border-radius:16px; margin-bottom:28px; }
+  .hero-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,4vw,2.8rem); color:#fff; }
+  .hero-title em { color:#f5c9a8; font-style:italic; }
+  .filter-pill { padding:6px 16px; border-radius:100px; border:1.5px solid #e0d8cc; background:transparent; font-size:.82rem; font-weight:500; cursor:pointer; transition:all .18s; }
+  .filter-pill:hover, .filter-pill.active { background:#2d2d2d; border-color:#2d2d2d; color:#fff; }
+  .pet-card { background:#fff; border-radius:16px; overflow:hidden; border:1px solid #e0d8cc; transition:transform .22s,box-shadow .22s; animation:fadeUp .4s ease both; }
+  .pet-card:hover { transform:translateY(-6px); box-shadow:0 20px 40px rgba(0,0,0,.1); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .pet-img { height:210px; object-fit:cover; width:100%; background:#f0ece6; display:flex; align-items:center; justify-content:center; }
+  .fav-btn { position:absolute; top:12px; right:12px; background:rgba(255,255,255,.9); border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.1rem; transition:transform .15s; }
+  .fav-btn:hover { transform:scale(1.15); }
+  .compare-bar { position:fixed; bottom:0; left:0; right:0; background:#2d2d2d; color:#fff; padding:12px 20px; transform:translateY(100%); transition:transform .3s; z-index:999; }
+  .compare-bar.visible { transform:translateY(0); }
+</style>
+
+<div class="listings-hero px-4">
+  <div class="container">
+    <p style="font-size:.75rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#e8845a;">Find your companion</p>
+    <h1 class="hero-title">Pets ready for <em>adoption</em></h1>
+    <p style="color:rgba(255,255,255,.6);max-width:440px;font-size:.95rem;line-height:1.6;">{{ pets|length }} animals waiting for a forever home. Filter by species, size or search by name.</p>
+  </div>
+</div>
+
+<div class="bg-white border-bottom py-3 mb-4" style="border-radius:12px;border:1px solid #e0d8cc!important;">
+  <div class="container d-flex gap-2 align-items-center flex-wrap px-3">
+    <span style="font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#888;">Filter:</span>
+    <button class="filter-pill active" onclick="filterSpecies('')">All</button>
+    <button class="filter-pill" onclick="filterSpecies('dog')">🐕 Dogs</button>
+    <button class="filter-pill" onclick="filterSpecies('cat')">🐈 Cats</button>
+    <button class="filter-pill" onclick="filterSpecies('rabbit')">🐇 Rabbits</button>
+    <div class="ms-auto d-flex gap-2">
+      <select class="form-select form-select-sm" style="width:120px;" onchange="filterSize(this.value)">
+        <option value="">Any size</option>
+        <option>small</option><option>medium</option><option>large</option>
+      </select>
+      <input type="text" class="form-control form-control-sm" placeholder="Search name/breed…" id="searchBox" oninput="filterSearch(this.value)" style="width:180px;">
+      <a href="{{ url_for('compare_pets') }}" class="btn btn-sm btn-outline-secondary">⚖ Compare</a>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3" id="petGrid">
+  {% for pet in pets %}
+  <div class="col-md-4 col-lg-3 pet-item" data-species="{{ pet.species|lower }}" data-size="{{ pet.size or '' }}" data-name="{{ pet.name|lower }} {{ pet.breed|lower }}" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
+    <div class="pet-card">
+      <div class="position-relative">
+        {% if pet.image %}
+        <img src="{{ pet.image }}" class="pet-img" alt="{{ pet.name }}">
+        {% else %}
+        <div class="pet-img"><span style="font-size:3.5rem;opacity:.3;">{% if 'dog' in pet.species|lower %}🐕{% elif 'cat' in pet.species|lower %}🐈{% else %}🐾{% endif %}</span></div>
+        {% endif %}
+        <button class="fav-btn" onclick="toggleFav(this, {{ pet.pet_id }})" title="Save">
+          {{ '❤️' if pet.pet_id in fav_ids else '🤍' }}
+        </button>
+        <span class="position-absolute bottom-0 start-0 m-2 badge" style="background:{% if pet.status=='available' %}#7a9e7e{% else %}#e8845a{% endif %};font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;">{{ pet.status }}</span>
+      </div>
+      <div class="p-3">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <h6 class="mb-0" style="font-family:'Playfair Display',serif;font-size:1.05rem;">{{ pet.name }}</h6>
+          <input type="checkbox" class="compare-check" value="{{ pet.pet_id }}" onchange="updateCompare()" style="accent-color:#e8845a;" title="Compare">
+        </div>
+        <small class="text-muted">{{ pet.breed }} · {{ pet.age }}yr · {{ pet.gender }}</small>
+        {% if pet.temperament %}<div class="mt-1"><small style="color:#7a9e7e;">{{ pet.temperament[:40] }}{% if pet.temperament|length > 40 %}…{% endif %}</small></div>{% endif %}
+        <div class="d-flex gap-2 mt-3">
+          <a href="{{ url_for('pet_detail', pet_id=pet.pet_id) }}" class="btn btn-sm flex-fill" style="background:#e8845a;color:#fff;border-radius:20px;font-size:.82rem;">View</a>
+          {% if pet.status == 'available' %}
+          <a href="{{ url_for('apply', pet_id=pet.pet_id) }}" class="btn btn-sm flex-fill btn-outline-secondary" style="border-radius:20px;font-size:.82rem;">Apply</a>
+          {% endif %}
+        </div>
+        {% if pet.adoption_fee %}<div class="mt-2 text-center"><small class="text-muted">Adoption fee: <strong style="color:#8b5e3c;">${{ "%.0f"|format(pet.adoption_fee) }}</strong></small></div>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12 text-center py-5 text-muted">No pets match your filters right now.</div>
+  {% endfor %}
+</div>
+
+<div class="compare-bar" id="compareBar">
+  <div class="container d-flex align-items-center justify-content-between">
+    <span id="compareCount">0 pets selected for comparison</span>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-light" onclick="clearCompare()">Clear</button>
+      <button class="btn btn-sm" style="background:#e8845a;color:#fff;" onclick="goCompare()">Compare Now</button>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+let activeSpecies = '', activeSize = '', activeSearch = '';
+function filterSpecies(s) {
+  activeSpecies = s;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  applyFilters();
+}
+function filterSize(s) { activeSize = s; applyFilters(); }
+function filterSearch(s) { activeSearch = s.toLowerCase(); applyFilters(); }
+function applyFilters() {
+  document.querySelectorAll('.pet-item').forEach(el => {
+    const sp = el.dataset.species.includes(activeSpecies);
+    const sz = !activeSize || el.dataset.size === activeSize;
+    const nm = !activeSearch || el.dataset.name.includes(activeSearch);
+    el.style.display = (sp && sz && nm) ? '' : 'none';
+  });
+}
+function toggleFav(btn, petId) {
+  fetch(`/favorites/toggle/${petId}`, {method:'POST'})
+    .then(r=>r.json()).then(d=>{ btn.textContent = d.status==='added' ? '❤️' : '🤍'; });
+}
+function updateCompare() {
+  const checked = document.querySelectorAll('.compare-check:checked');
+  const bar = document.getElementById('compareBar');
+  if (checked.length > 0) {
+    bar.classList.add('visible');
+    document.getElementById('compareCount').textContent = `${checked.length} pet${checked.length>1?'s':''} selected`;
+  } else { bar.classList.remove('visible'); }
+}
+function clearCompare() {
+  document.querySelectorAll('.compare-check:checked').forEach(c=>c.checked=false);
+  document.getElementById('compareBar').classList.remove('visible');
+}
+function goCompare() {
+  const ids = Array.from(document.querySelectorAll('.compare-check:checked')).map(c=>c.value);
+  window.location = '/pet/compare?' + ids.map(id=>`ids=${id}`).join('&');
+}
+</script>
+{% endblock %}
+{% endblock %}

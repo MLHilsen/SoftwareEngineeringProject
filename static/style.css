@@ -1,40 +1,11 @@
-body {
-    background-color: #f8f9fa;
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500&display=swap');
 
-.card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: none;
-    margin-bottom: 20px;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.btn {
-    border-radius: 5px;
-}
-
-.alert {
-    border-radius: 5px;
-}
-
-.navbar {
-    margin-bottom: 20px;
-}
-
-.table th {
-    background-color: #f8f9fa;
-}
-
-.badge {
-    padding: 8px 12px;
-    font-size: 0.9em;
-}
-
-.form-control:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-    border-color: #80bdff;
-}
+body { background-color: #f5f2ed; font-family: 'DM Sans', sans-serif; }
+.card { box-shadow: 0 2px 12px rgba(0,0,0,0.07); border: 1px solid #e0d8cc; }
+.btn { border-radius: 8px; }
+.navbar { box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+.table th { background-color: #f8f9fa; }
+.badge { font-size: 0.82em; }
+.form-control:focus, .form-select:focus { box-shadow: 0 0 0 0.2rem rgba(232,132,90,0.2); border-color: #e8845a; }
+a { color: #8b5e3c; }
+a:hover { color: #e8845a; }

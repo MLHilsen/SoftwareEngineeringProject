@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .live-dot { width:10px;height:10px;border-radius:50%;background:#7a9e7e;display:inline-block;animation:livepulse 1.5s infinite; }
+  @keyframes livepulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.6} }
+  .care-card { background:#fff;border-radius:12px;border:1px solid #e0d8cc;padding:16px 20px;margin-bottom:10px; }
+  .worker-chip { display:inline-flex;align-items:center;gap:8px;background:#f0ece6;border-radius:100px;padding:6px 14px;font-size:.85rem; }
+</style>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <h1 style="font-family:'Playfair Display',serif;" class="mb-0">Live Care Tracker</h1>
+      <span class="live-dot"></span><span class="text-muted small">Live</span>
+    </div>
+
+    <div class="mb-4 p-4" style="background:linear-gradient(135deg,#2d2d2d,#4a3728);border-radius:16px;">
+      {% if my_active %}
+      <h5 style="color:#f5c9a8;font-family:'Playfair Display',serif;">You are currently caring for <em>{{ my_active.care_pet.name }}</em></h5>
+      <p style="color:rgba(255,255,255,.6);font-size:.9rem;">Clocked in at {{ my_active.clocked_in.strftime('%I:%M %p') }}</p>
+      <form method="POST" action="{{ url_for('clock_out') }}" class="d-flex gap-2">
+        <input type="text" name="notes" class="form-control" placeholder="Session notes (optional)" style="max-width:300px;">
+        <button type="submit" class="btn" style="background:#e8845a;color:#fff;border-radius:20px;white-space:nowrap;">Clock Out</button>
+      </form>
+      {% else %}
+      <h5 style="color:#fff;font-family:'Playfair Display',serif;">You are not currently clocked in</h5>
+      <p style="color:rgba(255,255,255,.6);font-size:.9rem;">Select a pet and clock in to start a care session.</p>
+      <form method="POST" action="{{ url_for('clock_in') }}" class="d-flex gap-2 flex-wrap">
+        <select name="pet_id" class="form-select" style="max-width:200px;" required>
+          <option value="">Select pet...</option>
+          {% for p in pets %}<option value="{{ p.pet_id }}">{{ p.name }}</option>{% endfor %}
+        </select>
+        <input type="text" name="notes" class="form-control" placeholder="Notes (optional)" style="max-width:220px;">
+        <button type="submit" class="btn" style="background:#7a9e7e;color:#fff;border-radius:20px;white-space:nowrap;">Clock In</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <h5 style="font-family:'Playfair Display',serif;" class="mb-3">Currently Active Care Sessions</h5>
+    {% if active %}
+    {% for log in active %}
+    <div class="care-card d-flex justify-content-between align-items-center">
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="live-dot"></span>
+          <strong>{{ log.care_pet.name }}</strong>
+          <span class="text-muted small">{{ log.care_pet.species }} · {{ log.care_pet.breed }}</span>
+        </div>
+        <div class="mt-1">
+          <span class="worker-chip"><i class="bi bi-person-circle"></i> {{ log.worker.full_name }}</span>
+          <small class="text-muted ms-2">since {{ log.clocked_in.strftime('%I:%M %p') }}</small>
+        </div>
+        {% if log.notes %}<div class="small text-muted mt-1">{{ log.notes }}</div>{% endif %}
+      </div>
+      <div class="text-end">
+        <div class="small text-muted">Duration</div>
+        <strong class="timer" data-start="{{ log.clocked_in.isoformat() }}">—</strong>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="text-center py-4 text-muted" style="background:#faf7f2;border-radius:12px;">
+      <span style="font-size:2.5rem;">🐾</span><p class="mt-2 mb-0">No active care sessions right now.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    <h5 style="font-family:'Playfair Display',serif;" class="mb-3">Your recent sessions</h5>
+    {% for log in my_log %}
+    <div class="care-card">
+      <div class="d-flex justify-content-between">
+        <strong>{{ log.care_pet.name }}</strong>
+        <small class="text-muted">{{ log.clocked_in.strftime('%b %d') }}</small>
+      </div>
+      <div class="small text-muted">
+        {{ log.clocked_in.strftime('%I:%M %p') }} →
+        {% if log.clocked_out %}{{ log.clocked_out.strftime('%I:%M %p') }}{% else %}<span style="color:#7a9e7e;">Active</span>{% endif %}
+      </div>
+      {% if log.notes %}<div class="small mt-1">{{ log.notes }}</div>{% endif %}
+    </div>
+    {% else %}
+    <p class="text-muted small">No session history yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+function updateTimers() {
+  document.querySelectorAll('.timer').forEach(el => {
+    const start = new Date(el.dataset.start + 'Z');
+    const diff = Math.floor((Date.now() - start) / 1000);
+    const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+    el.textContent = h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+  });
+}
+updateTimers();
+setInterval(updateTimers, 1000);
+// Auto-refresh page every 30s for live data
+setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}
+{% endblock %}

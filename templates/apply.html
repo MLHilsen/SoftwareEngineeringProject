@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div style="background:linear-gradient(135deg,#2d2d2d,#4a3728);border-radius:16px;padding:32px;margin-bottom:24px;">
+      <h1 style="font-family:'Playfair Display',serif;color:#fff;">Apply for <em style="color:#f5c9a8;">{{ pet.name }}</em></h1>
+      <p style="color:rgba(255,255,255,.6);">{{ pet.breed }} · {{ pet.age }}yr · {{ pet.gender }}</p>
+    </div>
+    <form method="POST">
+      <div class="mb-4 p-4" style="background:#faf7f2;border-radius:12px;border:1px solid #e0d8cc;">
+        <h5 style="font-family:'Playfair Display',serif;">Application Type</h5>
+        <div class="d-flex gap-3">
+          <label class="flex-fill p-3 text-center" style="border:2px solid #e0d8cc;border-radius:12px;cursor:pointer;" id="lbl-adopt">
+            <input type="radio" name="application_type" value="adoption" checked onchange="updateType()" style="display:none;">
+            <div style="font-size:2rem;">🏠</div><strong>Adopt</strong><div class="small text-muted">Permanent home</div>
+          </label>
+          <label class="flex-fill p-3 text-center" style="border:2px solid #e0d8cc;border-radius:12px;cursor:pointer;" id="lbl-foster">
+            <input type="radio" name="application_type" value="foster" onchange="updateType()" style="display:none;">
+            <div style="font-size:2rem;">💛</div><strong>Foster</strong><div class="small text-muted">Temporary care</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="p-4 mb-3" style="background:#faf7f2;border-radius:12px;border:1px solid #e0d8cc;">
+        <h5 style="font-family:'Playfair Display',serif;">About Your Home</h5>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Housing type</label><select name="housing" class="form-select"><option value="">Select...</option><option>house</option><option>apartment</option><option>condo</option><option>other</option></select></div>
+          <div class="col-md-3"><label class="form-label">Household members</label><input type="number" name="household_mem" class="form-control" value="1" min="1"></div>
+          <div class="col-md-3 d-flex flex-column justify-content-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="has_yard" id="yard"><label class="form-check-label" for="yard">Have a yard</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="has_other_pets" id="pets"><label class="form-check-label" for="pets">Have other pets</label></div></div>
+          <div class="col-12"><label class="form-label">Other pets description</label><textarea name="other_pets_desc" class="form-control" rows="2" placeholder="If you have other pets, describe them..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="p-4 mb-3" style="background:#faf7f2;border-radius:12px;border:1px solid #e0d8cc;">
+        <h5 style="font-family:'Playfair Display',serif;">Your Experience</h5>
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label">Why do you want to adopt/foster {{ pet.name }}?</label><textarea name="reason" class="form-control" rows="3" required placeholder="Tell us about yourself and why you'd be a great match..."></textarea></div>
+          <div class="col-12"><label class="form-label">Pet experience</label><textarea name="pet_experience" class="form-control" rows="2" placeholder="Previous pets owned, volunteer experience..."></textarea></div>
+          <div class="col-md-6"><label class="form-label">Vet name (if applicable)</label><input type="text" name="vet_name" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Vet phone</label><input type="tel" name="vet_phone" class="form-control"></div>
+        </div>
+      </div>
+
+      <div class="p-4 mb-4" style="background:#faf7f2;border-radius:12px;border:1px solid #e0d8cc;">
+        <h5 style="font-family:'Playfair Display',serif;">References</h5>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Reference 1 — Name</label><input type="text" name="reference1_name" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Reference 1 — Phone</label><input type="tel" name="reference1_phone" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Reference 2 — Name</label><input type="text" name="reference2_name" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Reference 2 — Phone</label><input type="tel" name="reference2_phone" class="form-control"></div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3">
+        <a href="{{ url_for('pet_detail', pet_id=pet.pet_id) }}" class="btn btn-outline-secondary flex-fill" style="border-radius:20px;">Cancel</a>
+        <button type="submit" class="btn flex-fill" style="background:#e8845a;color:#fff;border-radius:20px;font-weight:500;">Submit Application</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% block scripts %}
+<script>
+function updateType() {
+  const val = document.querySelector('[name=application_type]:checked').value;
+  document.getElementById('lbl-adopt').style.borderColor = val==='adoption' ? '#e8845a' : '#e0d8cc';
+  document.getElementById('lbl-foster').style.borderColor = val==='foster' ? '#e8845a' : '#e0d8cc';
+}
+updateType();
+</script>
+{% endblock %}
+{% endblock %}

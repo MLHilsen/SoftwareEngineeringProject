@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h1 style="font-family:'Playfair Display',serif;" class="mb-4">New Blog Post</h1>
+    <form method="POST">
+      <div class="mb-3"><label class="form-label">Title</label><input type="text" name="title" class="form-control form-control-lg" required></div>
+      <div class="mb-3"><label class="form-label">Content</label><textarea name="content" class="form-control" rows="16" required placeholder="Write your post here..."></textarea></div>
+      <div class="mb-4 form-check"><input type="checkbox" name="published" class="form-check-input" id="pub" checked><label class="form-check-label" for="pub">Publish immediately</label></div>
+      <div class="d-flex gap-3">
+        <a href="{{ url_for('blog') }}" class="btn btn-outline-secondary flex-fill" style="border-radius:20px;">Cancel</a>
+        <button type="submit" class="btn flex-fill" style="background:#e8845a;color:#fff;border-radius:20px;">Publish Post</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

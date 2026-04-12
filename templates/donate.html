@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div style="background:linear-gradient(135deg,#2d2d2d,#4a3728);border-radius:16px;padding:48px;margin-bottom:32px;text-align:center;">
+      <span style="font-size:3rem;">❤️</span>
+      <h1 style="font-family:'Playfair Display',serif;color:#fff;margin-top:12px;">Every dollar saves a life</h1>
+      <p style="color:rgba(255,255,255,.65);">Your donation goes directly to food, shelter, medical care and enrichment for animals in our care.</p>
+    </div>
+
+    <div class="row g-3 mb-4">
+      {% for amt, label in [('10','Feed a pet for a week'),('25','Cover a vet checkup'),('50','Support a foster family'),('100','Fund a surgery')] %}
+      <div class="col-6">
+        <div class="text-center p-3" style="background:#faf7f2;border-radius:12px;border:2px solid #e0d8cc;cursor:pointer;transition:border-color .2s;" onclick="selectAmount(this, '{{ amt }}')">
+          <div style="font-family:'Playfair Display',serif;font-size:1.6rem;color:#e8845a;">${{ amt }}</div>
+          <small class="text-muted">{{ label }}</small>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mb-4 p-4" style="background:#faf7f2;border-radius:16px;border:1px solid #e0d8cc;">
+      <h5 style="font-family:'Playfair Display',serif;">Custom amount</h5>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="number" class="form-control" id="customAmount" placeholder="Enter amount" min="1">
+      </div>
+    </div>
+
+    <div class="mb-4 p-4" style="background:#faf7f2;border-radius:16px;border:1px solid #e0d8cc;">
+      <h5 style="font-family:'Playfair Display',serif;" class="mb-3">Payment (Demo)</h5>
+      <div class="alert" style="background:#e8f4ea;color:#2d7a3a;border-radius:12px;border:none;font-size:.9rem;">
+        <i class="bi bi-info-circle"></i> This is a demo — no real payment will be processed. In production, integrate Stripe or PayPal here.
+      </div>
+      <div class="row g-3">
+        <div class="col-12"><label class="form-label">Name on card</label><input type="text" class="form-control" placeholder="Jane Smith"></div>
+        <div class="col-12"><label class="form-label">Card number</label><input type="text" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19"></div>
+        <div class="col-6"><label class="form-label">Expiry</label><input type="text" class="form-control" placeholder="MM/YY"></div>
+        <div class="col-6"><label class="form-label">CVV</label><input type="text" class="form-control" placeholder="123"></div>
+      </div>
+    </div>
+
+    <button onclick="submitDonation()" class="btn w-100 btn-lg" style="background:#e8845a;color:#fff;border-radius:30px;font-weight:500;">Donate Now ❤️</button>
+
+    <div class="row g-3 mt-4">
+      {% for icon, txt in [('bi-shield-check','100% Secure'),('bi-receipt','Tax Deductible'),('bi-heart','Directly Helps Animals')] %}
+      <div class="col-4 text-center"><i class="bi {{ icon }} fs-4" style="color:#7a9e7e;"></i><div class="small text-muted mt-1">{{ txt }}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script>
+function selectAmount(el, amt) {
+  document.querySelectorAll('[onclick^="selectAmount"]').forEach(e => e.style.borderColor = '#e0d8cc');
+  el.style.borderColor = '#e8845a';
+  document.getElementById('customAmount').value = amt;
+}
+function submitDonation() {
+  const amt = document.getElementById('customAmount').value;
+  if (!amt || amt <= 0) { alert('Please select or enter a donation amount.'); return; }
+  alert(`Thank you for your $${amt} donation! (Demo mode — no charge made) 🐾`);
+}
+</script>
+{% endblock %}
+{% endblock %}

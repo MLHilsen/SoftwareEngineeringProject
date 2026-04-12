@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .store-hero { background:linear-gradient(135deg,#2d2d2d,#4a3728 60%,#8b5e3c); border-radius:16px; padding:48px; margin-bottom:32px; }
+  .product-card { background:#fff; border-radius:16px; border:1px solid #e0d8cc; overflow:hidden; transition:transform .2s,box-shadow .2s; height:100%; display:flex; flex-direction:column; }
+  .product-card:hover { transform:translateY(-5px); box-shadow:0 16px 40px rgba(0,0,0,.1); }
+  .product-img { height:200px; object-fit:cover; width:100%; background:#f0ece6; display:flex; align-items:center; justify-content:center; font-size:4rem; }
+  .badge-tag { font-size:.68rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; border-radius:100px; padding:3px 10px; }
+  .cart-drawer { position:fixed; top:0; right:-420px; width:400px; height:100vh; background:#fff; box-shadow:-4px 0 24px rgba(0,0,0,.12); z-index:1050; transition:right .3s ease; display:flex; flex-direction:column; }
+  .cart-drawer.open { right:0; }
+  .cart-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1040; display:none; }
+  .cart-overlay.open { display:block; }
+  .cart-item { display:flex; gap:12px; padding:14px 0; border-bottom:1px solid #f0ece6; }
+  .cart-item-img { width:60px; height:60px; border-radius:10px; object-fit:cover; background:#f0ece6; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; overflow:hidden; }
+  .qty-btn { width:28px; height:28px; border:1.5px solid #e0d8cc; border-radius:8px; background:transparent; font-size:1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; }
+  .qty-btn:hover { border-color:#e8845a; color:#e8845a; }
+  .cart-badge { position:absolute; top:-6px; right:-8px; background:#e8845a; color:#fff; border-radius:50%; width:18px; height:18px; font-size:.65rem; display:flex; align-items:center; justify-content:center; font-weight:700; }
+</style>
+
+<!-- Hero -->
+<div class="store-hero mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <p style="font-size:.75rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#e8845a;margin-bottom:8px;">Paw Path Shop</p>
+      <h1 style="font-family:'Playfair Display',serif;color:#fff;margin-bottom:8px;">Everything your pet <em style="color:#f5c9a8;">needs</em></h1>
+      <p style="color:rgba(255,255,255,.6);max-width:440px;font-size:.95rem;line-height:1.6;margin:0;">Proceeds from every purchase support animals in our care.</p>
+    </div>
+    <button onclick="openCart()" class="btn position-relative" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:30px;padding:10px 24px;font-size:1rem;">
+      🛒 Cart
+      <span id="cartBadge" class="cart-badge" style="display:none;">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <button class="filter-btn" data-cat="all" style="border-radius:100px;border:1.5px solid #2d2d2d;background:#2d2d2d;color:#fff;padding:6px 18px;cursor:pointer;">All</button>
+  <button class="filter-btn" data-cat="dog" style="border-radius:100px;border:1.5px solid #e0d8cc;background:transparent;padding:6px 18px;cursor:pointer;">🐕 Dogs</button>
+  <button class="filter-btn" data-cat="cat" style="border-radius:100px;border:1.5px solid #e0d8cc;background:transparent;padding:6px 18px;cursor:pointer;">🐈 Cats</button>
+  <button class="filter-btn" data-cat="health" style="border-radius:100px;border:1.5px solid #e0d8cc;background:transparent;padding:6px 18px;cursor:pointer;">💊 Health</button>
+  <button class="filter-btn" data-cat="accessories" style="border-radius:100px;border:1.5px solid #e0d8cc;background:transparent;padding:6px 18px;cursor:pointer;">🎀 Accessories</button>
+</div>
+
+<!-- Product Grid (rendered by JS) -->
+<div class="row g-4" id="productGrid"></div>
+
+<!-- Cart Overlay -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+
+<!-- Cart Drawer -->
+<div class="cart-drawer" id="cartDrawer">
+  <div class="p-4 border-bottom d-flex justify-content-between align-items-center" style="background:#faf7f2;">
+    <h5 style="font-family:'Playfair Display',serif;margin:0;">Your Cart <span id="cartCount" class="text-muted" style="font-size:.85rem;font-weight:400;"></span></h5>
+    <button onclick="closeCart()" style="border:none;background:transparent;font-size:1.4rem;cursor:pointer;color:#2d2d2d;line-height:1;">×</button>
+  </div>
+  <div class="flex-fill overflow-auto p-4" id="cartItems"></div>
+  <div id="cartFooter" style="display:none;padding:20px;border-top:1px solid #e0d8cc;">
+    <div class="d-flex justify-content-between mb-1"><span class="text-muted">Subtotal</span><span id="subtotal">$0.00</span></div>
+    <div class="d-flex justify-content-between mb-1"><span class="text-muted">Shipping</span><span style="color:#7a9e7e;">Free</span></div>
+    <div class="d-flex justify-content-between mb-3 pt-2" style="border-top:1px solid #e0d8cc;"><strong>Total</strong><strong id="total" style="color:#e8845a;font-size:1.1rem;">$0.00</strong></div>
+    <button onclick="checkout()" class="btn w-100" style="background:#e8845a;color:#fff;border-radius:30px;font-size:1rem;padding:12px;">
+      Checkout — <span id="checkoutTotal">$0.00</span>
+    </button>
+    <button onclick="clearCart()" class="btn w-100 mt-2 btn-outline-secondary" style="border-radius:30px;font-size:.85rem;">Clear cart</button>
+  </div>
+  <div id="checkoutSuccess" style="display:none;padding:40px 20px;text-align:center;">
+    <div style="font-size:4rem;">🎉</div>
+    <h4 style="font-family:'Playfair Display',serif;" class="mt-3">Order placed!</h4>
+    <p class="text-muted">Thanks for supporting Paw Path! <br><em style="font-size:.85rem;">(Demo — no charge made.)</em></p>
+    <button onclick="resetCheckout()" class="btn mt-2" style="background:#e8845a;color:#fff;border-radius:20px;">Continue shopping</button>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+const PRODUCTS = [
+  { id:1,  name:"Premium Dog Food — 5kg",        cat:"dog",         emoji:"🦴", img:"https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&q=80", price:34.99, badge:"Bestseller", desc:"Grain-free, high-protein formula with real chicken. Vet recommended for adult dogs of all sizes." },
+  { id:2,  name:"Cat Scratching Post",            cat:"cat",         emoji:"🐾", img:"https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=600&q=80", price:29.99, badge:"Popular",    desc:"Sisal-wrapped 60cm post with a cosy top platform. Saves your furniture, satisfies their instincts." },
+  { id:3,  name:"Flea & Tick Collar — 8 month",  cat:"health",      emoji:"💊", img:"",                                                                          price:19.99, badge:"Vet approved",desc:"Odourless waterproof collar providing 8 months of continuous flea and tick protection." },
+  { id:4,  name:"Interactive Puzzle Feeder",      cat:"dog",         emoji:"🎮", img:"https://images.unsplash.com/photo-1601758125946-6ec2ef64daf8?w=600&q=80", price:24.99, badge:"New",        desc:"Slow down fast eaters and keep smart dogs stimulated. Dishwasher safe, 3 difficulty levels." },
+  { id:5,  name:"Organic Catnip Toys — 3 pack",  cat:"cat",         emoji:"🌿", img:"https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=600&q=80", price:12.99, badge:"",           desc:"Hand-stitched linen mice stuffed with certified organic catnip. Machine washable." },
+  { id:6,  name:"Adjustable Harness — S/M/L",    cat:"accessories", emoji:"🎀", img:"https://images.unsplash.com/photo-1601758177266-bc599de87707?w=600&q=80", price:27.99, badge:"Top rated",  desc:"Escape-proof step-in harness with reflective stitching. No-pull chest clip, padded chest plate." },
+  { id:7,  name:"Joint Support Chews — 60ct",    cat:"health",      emoji:"💊", img:"",                                                                          price:22.99, badge:"Vet approved",desc:"Glucosamine + chondroitin soft chews for dogs. Supports hip and joint health in seniors." },
+  { id:8,  name:"Stainless Steel Bowl Set",       cat:"accessories", emoji:"🥣", img:"https://images.unsplash.com/photo-1589924691995-400dc9eee119?w=600&q=80", price:16.99, badge:"",           desc:"Non-slip rubber base, dishwasher safe. Set of two — perfect for food and water." },
+  { id:9,  name:"Premium Cat Food — Wet 12pk",   cat:"cat",         emoji:"🐟", img:"",                                                                          price:18.99, badge:"Bestseller", desc:"Real tuna and salmon in broth, no artificial colours. Grain-free, complete nutrition." },
+  { id:10, name:"Retractable Dog Leash — 5m",    cat:"dog",         emoji:"🦮", img:"https://images.unsplash.com/photo-1601758174039-84312e00c8e7?w=600&q=80", price:21.99, badge:"Popular",    desc:"5 metre retractable leash with ergonomic grip and one-button brake. Up to 50kg." },
+  { id:11, name:"Pet First Aid Kit",              cat:"health",      emoji:"🩺", img:"",                                                                          price:34.99, badge:"Essential",  desc:"38-piece kit with wound care, bandages, antiseptic wipes, tick remover and emergency guide." },
+  { id:12, name:"Personalised ID Tag",            cat:"accessories", emoji:"🏷️", img:"",                                                                          price:9.99,  badge:"",           desc:"Stainless steel tag engraved with your pet's name and number. Ships in 2 days." },
+];
+
+let cart = {};
+let activeFilter = 'all';
+
+// ── Render products ───────────────────────────────────────────────
+function renderProducts() {
+  const grid = document.getElementById('productGrid');
+  const filtered = activeFilter === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.cat === activeFilter);
+  grid.innerHTML = filtered.map(p => `
+    <div class="col-md-4 col-lg-3">
+      <div class="product-card">
+        ${p.img
+          ? `<img src="${p.img}" class="product-img" alt="${p.name}" onerror="this.outerHTML='<div class=\\'product-img\\'>${p.emoji}</div>'">`
+          : `<div class="product-img">${p.emoji}</div>`}
+        <div class="p-3 d-flex flex-column flex-fill">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <h6 style="font-family:'Playfair Display',serif;font-size:.95rem;line-height:1.3;margin:0;flex:1;">${p.name}</h6>
+            ${p.badge ? `<span class="badge-tag badge ms-2" style="background:#f0ece6;color:#8b5e3c;white-space:nowrap;">${p.badge}</span>` : ''}
+          </div>
+          <p class="text-muted small mb-3 flex-fill" style="font-size:.8rem;line-height:1.5;">${p.desc}</p>
+          <div class="d-flex justify-content-between align-items-center mt-auto">
+            <span style="font-family:'Playfair Display',serif;font-size:1.15rem;color:#e8845a;font-weight:600;">$${p.price.toFixed(2)}</span>
+            <button id="addbtn-${p.id}" onclick="addToCart(${p.id})"
+              style="background:#e8845a;color:#fff;border:none;border-radius:20px;font-size:.82rem;padding:6px 16px;cursor:pointer;transition:background .2s;">
+              🛍 Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Cart logic ────────────────────────────────────────────────────
+function addToCart(id) {
+  const product = PRODUCTS.find(p => p.id === id);
+  if (!product) return;
+  cart[id] ? cart[id].qty++ : (cart[id] = { ...product, qty: 1 });
+  updateCartUI();
+  openCart();
+  const btn = document.getElementById('addbtn-' + id);
+  if (btn) {
+    btn.style.background = '#7a9e7e';
+    btn.textContent = '✓ Added';
+    setTimeout(() => { btn.style.background = '#e8845a'; btn.textContent = '🛍 Add'; }, 1200);
+  }
+}
+
+function changeQty(id, delta) {
+  if (!cart[id]) return;
+  cart[id].qty += delta;
+  if (cart[id].qty <= 0) delete cart[id];
+  updateCartUI();
+}
+
+function removeItem(id) { delete cart[id]; updateCartUI(); }
+function clearCart()    { cart = {}; updateCartUI(); }
+
+function updateCartUI() {
+  const items = Object.values(cart);
+  const totalQty   = items.reduce((s, i) => s + i.qty, 0);
+  const totalPrice = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const fmt = '$' + totalPrice.toFixed(2);
+
+  // Badge
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = totalQty;
+  badge.style.display = totalQty > 0 ? 'flex' : 'none';
+  document.getElementById('cartCount').textContent = totalQty > 0 ? `(${totalQty} item${totalQty > 1 ? 's' : ''})` : '';
+
+  const itemsEl  = document.getElementById('cartItems');
+  const footerEl = document.getElementById('cartFooter');
+
+  if (items.length === 0) {
+    itemsEl.innerHTML = `<div class="text-center py-5 text-muted"><div style="font-size:3rem;">🛒</div><p class="mt-2">Your cart is empty</p></div>`;
+    footerEl.style.display = 'none';
+    return;
+  }
+
+  itemsEl.innerHTML = items.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img">
+        ${item.img ? `<img src="${item.img}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${item.emoji}'">` : item.emoji}
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:.88rem;font-weight:500;line-height:1.3;">${item.name}</div>
+        <div style="color:#e8845a;font-size:.85rem;margin-top:2px;">$${item.price.toFixed(2)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span style="min-width:20px;text-align:center;font-size:.9rem;">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+          <button onclick="removeItem(${item.id})" style="border:none;background:transparent;color:#bbb;font-size:.78rem;cursor:pointer;margin-left:4px;">Remove</button>
+        </div>
+      </div>
+      <div style="font-size:.9rem;font-weight:600;white-space:nowrap;">$${(item.price * item.qty).toFixed(2)}</div>
+    </div>
+  `).join('');
+
+  footerEl.style.display = 'block';
+  document.getElementById('subtotal').textContent = fmt;
+  document.getElementById('total').textContent = fmt;
+  document.getElementById('checkoutTotal').textContent = fmt;
+}
+
+// ── Cart drawer ───────────────────────────────────────────────────
+function openCart()  {
+  document.getElementById('cartDrawer').classList.add('open');
+  document.getElementById('cartOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCart() {
+  document.getElementById('cartDrawer').classList.remove('open');
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function checkout() {
+  document.getElementById('cartItems').style.display = 'none';
+  document.getElementById('cartFooter').style.display = 'none';
+  document.getElementById('checkoutSuccess').style.display = 'block';
+}
+function resetCheckout() {
+  cart = {};
+  updateCartUI();
+  document.getElementById('cartItems').style.display = 'block';
+  document.getElementById('checkoutSuccess').style.display = 'none';
+  closeCart();
+}
+
+// ── Filters ───────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeFilter = btn.dataset.cat;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.style.background = 'transparent';
+      b.style.color = '#2d2d2d';
+      b.style.borderColor = '#e0d8cc';
+    });
+    btn.style.background = '#2d2d2d';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#2d2d2d';
+    renderProducts();
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────
+renderProducts();
+updateCartUI();
+</script>
+{% endblock %}
+{% endblock %}

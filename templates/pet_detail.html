@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .pet-hero { background:linear-gradient(135deg,#2d2d2d,#4a3728); border-radius:16px; overflow:hidden; }
+  .pet-hero-img { height:380px; object-fit:cover; width:100%; }
+  .section-card { background:#faf7f2; border-radius:12px; border:1px solid #e0d8cc; padding:24px; margin-bottom:20px; }
+  .badge-pill { font-size:.72rem; font-weight:500; letter-spacing:.08em; padding:5px 12px; border-radius:100px; text-transform:uppercase; }
+  .timeline-item { border-left:3px solid #e0d8cc; padding-left:16px; margin-bottom:16px; position:relative; }
+  .timeline-item::before { content:''; position:absolute; left:-7px; top:4px; width:11px; height:11px; border-radius:50%; background:#e8845a; }
+  .care-badge { background:#7a9e7e; color:#fff; border-radius:100px; padding:4px 12px; font-size:.78rem; display:inline-flex; align-items:center; gap:6px; }
+  .care-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:#b8e6be; display:inline-block; animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+
+<div class="row g-4">
+  <div class="col-md-5">
+    <div class="pet-hero">
+      {% if pet.image %}
+      <img src="{{ pet.image }}" class="pet-hero-img" alt="{{ pet.name }}">
+      {% else %}
+      <div class="pet-hero-img d-flex align-items-center justify-content-center" style="background:#3a3028;">
+        <span style="font-size:6rem;opacity:.3;">🐾</span>
+      </div>
+      {% endif %}
+      <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <h1 style="font-family:'Playfair Display',serif;color:#fff;margin:0;">{{ pet.name }}</h1>
+          <span class="badge-pill badge" style="background:{% if pet.status=='available' %}#7a9e7e{% else %}#e8845a{% endif %};">{{ pet.status }}</span>
+        </div>
+        <p style="color:rgba(255,255,255,.6);margin-top:4px;">{{ pet.breed }} · {{ pet.age }} yr · {{ pet.gender }} · {{ pet.size or 'unknown size' }}</p>
+        {% if pet.adoption_fee %}<p style="color:#f5c9a8;font-size:1.1rem;">Adoption fee: <strong>${{ "%.0f"|format(pet.adoption_fee) }}</strong></p>{% endif %}
+      </div>
+    </div>
+    {% if active_care %}
+    <div class="mt-3">
+      {% for log in active_care %}
+      <div class="care-badge mb-1"><span>{{ log.worker.full_name }} is currently caring for {{ pet.name }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <!-- Favorite + Apply -->
+    <div class="d-flex gap-2 mt-3">
+      <button id="favBtn" onclick="toggleFav({{ pet.pet_id }})" class="btn flex-fill" style="background:{% if is_fav %}#e8845a{% else %}#faf7f2{% endif %};color:{% if is_fav %}#fff{% else %}#2d2d2d{% endif %};border:1.5px solid #e0d8cc;border-radius:30px;">
+        {% if is_fav %}❤️ Saved{% else %}🤍 Save{% endif %}
+      </button>
+      {% if pet.status == 'available' %}
+      <a href="{{ url_for('apply', pet_id=pet.pet_id) }}" class="btn flex-fill" style="background:#e8845a;color:#fff;border-radius:30px;">Apply to Adopt</a>
+      {% endif %}
+    </div>
+    <div class="mt-2 text-center">
+      <a href="{{ url_for('compare_pets') }}?ids={{ pet.pet_id }}" style="color:#8b5e3c;font-size:.85rem;">⚖ Compare with other pets</a>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <!-- About -->
+    <div class="section-card">
+      <h5 style="font-family:'Playfair Display',serif;">About {{ pet.name }}</h5>
+      <p class="text-muted">{{ pet.description or 'No description available.' }}</p>
+      <div class="row g-2 mt-1">
+        {% for label, val in [('Color', pet.color), ('Temperament', pet.temperament), ('Special needs', pet.special_needs)] %}
+        {% if val %}
+        <div class="col-6"><small class="text-muted">{{ label }}</small><div style="font-size:.9rem;">{{ val }}</div></div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Adoption history -->
+    <div class="section-card">
+      <h5 style="font-family:'Playfair Display',serif;"><i class="bi bi-clock-history"></i> Adoption History</h5>
+      {% if history %}
+      {% for h in history %}
+      <div class="timeline-item">
+        <strong>{{ h.adopter.full_name }}</strong>
+        <small class="text-muted ms-2">{{ h.adoption_date.strftime('%B %Y') }}</small>
+        {% if h.notes %}<div class="text-muted small">{{ h.notes }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="text-muted small">{{ pet.name }} hasn't been adopted before — first-time chance!</p>
+      {% endif %}
+    </div>
+
+    <!-- Medical Records -->
+    <div class="section-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="font-family:'Playfair Display',serif;" class="mb-0"><i class="bi bi-clipboard2-heart"></i> Medical Records</h5>
+        {% if current_user.is_admin() %}
+        <button class="btn btn-sm" style="background:#e8845a;color:#fff;border-radius:20px;" data-bs-toggle="modal" data-bs-target="#addRecordModal">+ Add</button>
+        {% endif %}
+      </div>
+      {% if records %}
+      {% for r in records %}
+      <div class="timeline-item">
+        <div class="d-flex justify-content-between">
+          <strong>{{ r.record_type|title }}</strong>
+          <small class="text-muted">{{ r.record_date.strftime('%b %d, %Y') }}</small>
+        </div>
+        {% if r.vet_name %}<small class="text-muted">Dr. {{ r.vet_name }}</small>{% endif %}
+        {% if r.diagnosis %}<div class="small">{{ r.diagnosis }}</div>{% endif %}
+        {% if r.medications %}<div class="small text-muted"><i class="bi bi-capsule"></i> {{ r.medications }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="text-muted small">No medical records yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Appointments -->
+    <div class="section-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="font-family:'Playfair Display',serif;" class="mb-0"><i class="bi bi-calendar-check"></i> Upcoming Appointments</h5>
+        <a href="{{ url_for('appointments') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:20px;font-size:.8rem;">Schedule</a>
+      </div>
+      {% if appts %}
+      {% for a in appts %}
+      <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+        <div>
+          <span class="badge me-2" style="background:#f0ece6;color:#8b5e3c;">{{ a.service_type|title }}</span>
+          {{ a.appointment_date.strftime('%b %d, %Y at %I:%M %p') }}
+        </div>
+        {% if a.vet_name %}<small class="text-muted">{{ a.vet_name }}</small>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="text-muted small">No upcoming appointments.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add Medical Record Modal (admin only) -->
+{% if current_user.is_admin() %}
+<div class="modal fade" id="addRecordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#4a3728;color:#fff;">
+        <h5 class="modal-title">Add Medical Record for {{ pet.name }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('new_medical_record') }}">
+        <div class="modal-body">
+          <input type="hidden" name="pet_id" value="{{ pet.pet_id }}">
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label">Type</label>
+              <select name="record_type" class="form-select" required>
+                <option>vaccination</option><option>checkup</option><option>surgery</option><option>treatment</option><option>other</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Date</label>
+              <input type="date" name="record_date" class="form-control" required>
+            </div>
+            <div class="col-6"><label class="form-label">Vet Name</label><input type="text" name="vet_name" class="form-control"></div>
+            <div class="col-6"><label class="form-label">Cost ($)</label><input type="number" name="cost" class="form-control" step="0.01" value="0"></div>
+            <div class="col-12"><label class="form-label">Diagnosis</label><textarea name="diagnosis" class="form-control" rows="2"></textarea></div>
+            <div class="col-12"><label class="form-label">Treatment</label><textarea name="treatment" class="form-control" rows="2"></textarea></div>
+            <div class="col-12"><label class="form-label">Medications</label><input type="text" name="medications" class="form-control"></div>
+            <div class="col-6"><label class="form-label">Next Appt Date</label><input type="date" name="next_appt_date" class="form-control"></div>
+            <div class="col-12"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn" style="background:#e8845a;color:#fff;">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script>
+function toggleFav(petId) {
+  fetch(`/favorites/toggle/${petId}`, {method:'POST'})
+    .then(r=>r.json()).then(d=>{
+      const btn = document.getElementById('favBtn');
+      if(d.status==='added') { btn.textContent='❤️ Saved'; btn.style.background='#e8845a'; btn.style.color='#fff'; }
+      else { btn.textContent='🤍 Save'; btn.style.background='#faf7f2'; btn.style.color='#2d2d2d'; }
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

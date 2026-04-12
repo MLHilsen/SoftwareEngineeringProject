@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="background:linear-gradient(135deg,#2d2d2d,#4a3728);border-radius:16px;padding:48px;margin-bottom:32px;">
+  <h1 style="font-family:'Playfair Display',serif;color:#fff;">Join Our <em style="color:#f5c9a8;">Team</em></h1>
+  <p style="color:rgba(255,255,255,.65);max-width:500px;">Help us give every animal a second chance at love. We're a mission-driven team looking for passionate people.</p>
+</div>
+<div class="row g-4 mb-5">
+  {% for role, dept, type, desc in [
+    ('Shelter Coordinator', 'Operations', 'Full-time', 'Manage daily shelter operations, oversee animal care staff, and coordinate adoptions.'),
+    ('Veterinary Technician', 'Medical', 'Full-time', 'Assist with medical procedures, vaccinations and health checks for animals in our care.'),
+    ('Community Outreach Manager', 'Marketing', 'Full-time', 'Grow our community presence through events, social media and donor relations.'),
+    ('Foster Care Coordinator', 'Programs', 'Part-time', 'Match animals with foster families, provide support and track foster outcomes.'),
+    ('Animal Behaviour Specialist', 'Medical', 'Part-time', 'Assess animal temperaments and create enrichment plans for long-term residents.'),
+    ('Weekend Volunteer Supervisor', 'Operations', 'Volunteer', 'Lead weekend volunteer groups and ensure animal care standards are maintained.'),
+  ] %}
+  <div class="col-md-6">
+    <div style="background:#faf7f2;border-radius:16px;border:1px solid #e0d8cc;padding:24px;height:100%;">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 style="font-family:'Playfair Display',serif;margin-bottom:0;">{{ role }}</h5>
+        <span class="badge" style="background:{% if type=='Full-time' %}#7a9e7e{% elif type=='Part-time' %}#e8845a{% else %}#a78bca{% endif %};border-radius:100px;font-size:.7rem;">{{ type }}</span>
+      </div>
+      <small class="text-muted">{{ dept }}</small>
+      <p class="text-muted small mt-2 mb-3">{{ desc }}</p>
+      <button class="btn btn-sm btn-outline-secondary" style="border-radius:20px;" data-bs-toggle="modal" data-bs-target="#applyJobModal" onclick="setRole('{{ role }}')">Apply for this role</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="p-5 text-center" style="background:#faf7f2;border-radius:16px;border:1px solid #e0d8cc;">
+  <h4 style="font-family:'Playfair Display',serif;">Don't see a fit?</h4>
+  <p class="text-muted">We're always looking for passionate animal lovers. Send us your resume anyway.</p>
+  <a href="mailto:careers@pawpath.org" class="btn" style="background:#e8845a;color:#fff;border-radius:20px;">careers@pawpath.org</a>
+</div>
+
+<div class="modal fade" id="applyJobModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#4a3728;color:#fff;">
+        <h5 class="modal-title">Apply — <span id="jobTitle"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert" style="background:#e8f4ea;color:#2d7a3a;border-radius:12px;border:none;">This is a demo. In production this would submit to your HR system.</div>
+        <div class="mb-3"><label class="form-label">Full Name</label><input type="text" class="form-control" value="{% if current_user.is_authenticated %}{{ current_user.full_name }}{% endif %}"></div>
+        <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" value="{% if current_user.is_authenticated %}{{ current_user.email }}{% endif %}"></div>
+        <div class="mb-3"><label class="form-label">Cover Letter</label><textarea class="form-control" rows="4" placeholder="Tell us why you'd be a great fit..."></textarea></div>
+        <div class="mb-3"><label class="form-label">Resume link or LinkedIn</label><input type="url" class="form-control" placeholder="https://..."></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn" style="background:#e8845a;color:#fff;" onclick="alert('Application submitted! (Demo mode)');bootstrap.Modal.getInstance(document.getElementById('applyJobModal')).hide();">Submit Application</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script>function setRole(r){document.getElementById('jobTitle').textContent=r;}</script>
+{% endblock %}
+{% endblock %}

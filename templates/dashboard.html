@@ -1,169 +1,92 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow-lg border-0 mb-4">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h3>
-            </div>
-            <div class="card-body">
-                <div class="row align-items-center mb-4">
-                    <div class="col-auto">
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <i class="bi bi-person-circle display-4 text-primary"></i>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <h2 class="mb-1">Welcome, {{ user.full_name }}!</h2>
-                        <p class="text-muted mb-0">This is your personal dashboard where you can manage your account.</p>
-                    </div>
-                    <div class="col-auto">
-                        <span class="badge {% if user.is_admin() %}bg-danger{% else %}bg-info{% endif %} p-3">
-                            <i class="bi bi-shield"></i> {{ user.role|upper }}
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="row mt-4">
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100 border-0 bg-light">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="bi bi-info-circle text-primary"></i> Your Information
-                                </h5>
-                                <table class="table table-borderless">
-                                    <tr>
-                                        <th width="40%"><i class="bi bi-person"></i> Full Name:</th>
-                                        <td>{{ user.full_name }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th><i class="bi bi-envelope"></i> Email:</th>
-                                        <td>{{ user.email }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th><i class="bi bi-telephone"></i> Phone:</th>
-                                        <td>{{ user.phone if user.phone else 'Not provided' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th><i class="bi bi-geo-alt"></i> Address:</th>
-                                        <td>{{ user.address if user.address else 'Not provided' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th><i class="bi bi-calendar"></i> Member since:</th>
-                                        <td>{{ user.created_at.strftime('%B %d, %Y') }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th><i class="bi bi-clock-history"></i> Last login:</th>
-                                        <td>
-                                            {% if user.last_login %}
-                                                {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
-                                            {% else %}
-                                                <span class="text-muted">First login</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th><i class="bi bi-toggle-on"></i> Account status:</th>
-                                        <td>
-                                            {% if user.is_active %}
-                                                <span class="badge bg-success">Active</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Inactive</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100 border-0 bg-light">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="bi bi-lightning-charge text-warning"></i> Quick Actions
-                                </h5>
-                                <div class="d-grid gap-3">
-                                    <a href="{{ url_for('profile') }}" class="btn btn-primary">
-                                        <i class="bi bi-pencil-square"></i> Edit Profile
-                                    </a>
-                                    <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                                        <i class="bi bi-key"></i> Change Password
-                                    </a>
-                                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
-                                        <i class="bi bi-box-arrow-right"></i> Logout
-                                    </a>
-                                    {% if user.is_admin() %}
-                                    <hr>
-                                    <a href="{{ url_for('admin_panel') }}" class="btn btn-warning">
-                                        <i class="bi bi-shield-lock"></i> Go to Admin Panel
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card mt-4 border-0 bg-light">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="bi bi-graph-up text-success"></i> Account Statistics
-                                </h5>
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <div class="p-3">
-                                            <i class="bi bi-calendar-check display-6 text-primary"></i>
-                                            <h4>{{ (now - user.created_at).days }}</h4>
-                                            <small class="text-muted">Days Active</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="p-3">
-                                            <i class="bi bi-session display-6 text-success"></i>
-                                            <h4>N/A</h4>
-                                            <small class="text-muted">Total Sessions</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<style>
+  .dash-card { background:#fff;border-radius:16px;border:1px solid #e0d8cc;padding:24px;height:100%; }
+  .stat-box { background:#faf7f2;border-radius:12px;padding:16px;text-align:center; }
+  .stat-num { font-family:'Playfair Display',serif;font-size:1.8rem;color:#e8845a; }
+  .quick-link { display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid #e0d8cc;text-decoration:none;color:#2d2d2d;transition:border-color .2s,background .2s; }
+  .quick-link:hover { border-color:#e8845a;background:#faf7f2;color:#2d2d2d; }
+</style>
+
+<div style="background:linear-gradient(135deg,#2d2d2d,#4a3728);border-radius:16px;padding:32px;margin-bottom:24px;">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;color:#fff;margin-bottom:4px;">Welcome back, <em style="color:#f5c9a8;">{{ user.full_name.split()[0] }}</em>!</h2>
+      <p style="color:rgba(255,255,255,.6);margin:0;">{{ user.email }} · Member since {{ user.created_at.strftime('%B %Y') }}</p>
     </div>
+    <span class="badge p-2" style="background:{% if user.is_admin() %}#e8845a{% else %}rgba(255,255,255,.15){% endif %};color:#fff;border-radius:100px;font-size:.8rem;">{{ user.role|upper }}</span>
+  </div>
 </div>
 
-<!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="bi bi-key"></i> Change Password</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="{{ url_for('change_password') }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="current_password" class="form-label">Current Password</label>
-                        <input type="password" class="form-control" id="current_password" name="current_password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_password" class="form-label">New Password</label>
-                        <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
-                        <small class="text-muted">Minimum 6 characters</small>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Change Password</button>
-                </div>
-            </form>
-        </div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-num">{{ my_apps|length }}</div><div class="small text-muted">Applications</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-num">{{ my_appts|length }}</div><div class="small text-muted">Upcoming appts</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-num">{{ my_favs|length }}</div><div class="small text-muted">Saved pets</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-num">{{ (now - user.created_at).days }}</div><div class="small text-muted">Days as member</div></div></div>
+</div>
+
+<div class="row g-4">
+  <!-- Quick actions -->
+  <div class="col-md-4">
+    <div class="dash-card">
+      <h5 style="font-family:'Playfair Display',serif;" class="mb-3">Quick Actions</h5>
+      <div class="d-flex flex-column gap-2">
+        <a href="{{ url_for('listings') }}" class="quick-link"><i class="bi bi-heart" style="color:#e8845a;"></i> Browse pets</a>
+        <a href="{{ url_for('favorites') }}" class="quick-link"><i class="bi bi-bookmark-heart" style="color:#e8845a;"></i> Saved pets ({{ my_favs|length }})</a>
+        <a href="{{ url_for('appointments') }}" class="quick-link"><i class="bi bi-calendar-check" style="color:#e8845a;"></i> My appointments</a>
+        <a href="{{ url_for('care_tracker') }}" class="quick-link"><i class="bi bi-activity" style="color:#7a9e7e;"></i> Care tracker</a>
+        <a href="{{ url_for('compare_pets') }}" class="quick-link"><i class="bi bi-arrow-left-right" style="color:#8b9eb0;"></i> Compare pets</a>
+        <a href="{{ url_for('profile') }}" class="quick-link"><i class="bi bi-person" style="color:#8b9eb0;"></i> Edit profile</a>
+        {% if user.is_admin() %}<a href="{{ url_for('admin_panel') }}" class="quick-link" style="border-color:#e8845a;"><i class="bi bi-shield-lock" style="color:#e8845a;"></i> Admin panel</a>{% endif %}
+      </div>
     </div>
+  </div>
+
+  <!-- My applications -->
+  <div class="col-md-4">
+    <div class="dash-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="font-family:'Playfair Display',serif;" class="mb-0">My Applications</h5>
+        <a href="{{ url_for('listings') }}" style="color:#e8845a;font-size:.85rem;">Browse →</a>
+      </div>
+      {% for app in my_apps %}
+      <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+        <div>
+          <strong style="font-size:.9rem;">{{ app.pet.name }}</strong>
+          <div class="small text-muted">{{ app.application_type|title }} · {{ app.submitted_at.strftime('%b %d') }}</div>
+        </div>
+        <span class="badge" style="font-size:.7rem;border-radius:100px;background:{% if app.status=='approved' %}#7a9e7e{% elif app.status=='rejected' %}#e8845a{% elif app.status=='pending' %}#f0c96e{% else %}#ccc{% endif %};">{{ app.status }}</span>
+      </div>
+      {% else %}
+      <p class="text-muted small">No applications yet. <a href="{{ url_for('listings') }}" style="color:#e8845a;">Find a pet!</a></p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Notifications + upcoming -->
+  <div class="col-md-4">
+    <div class="dash-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="font-family:'Playfair Display',serif;" class="mb-0">Recent Notifications</h5>
+        <a href="{{ url_for('notifications') }}" style="color:#e8845a;font-size:.85rem;">All →</a>
+      </div>
+      {% for n in notifications %}
+      <div class="py-2 border-bottom">
+        {% if not n.is_read %}<span class="badge me-1" style="background:#e8845a;border-radius:100px;font-size:.6rem;">New</span>{% endif %}
+        <span style="font-size:.88rem;">{{ n.message[:60] }}{% if n.message|length > 60 %}…{% endif %}</span>
+        <div class="small text-muted">{{ n.created_at.strftime('%b %d') }}</div>
+      </div>
+      {% else %}
+      <p class="text-muted small">No notifications.</p>
+      {% endfor %}
+      {% if my_appts %}
+      <hr style="border-color:#e0d8cc;margin:16px 0 12px;">
+      <div class="small text-muted fw-semibold mb-2">UPCOMING APPOINTMENTS</div>
+      {% for a in my_appts %}
+      <div class="py-1"><span class="badge me-1" style="background:#f0ece6;color:#8b5e3c;font-size:.7rem;">{{ a.service_type }}</span><span style="font-size:.88rem;">{{ a.pet.name }} — {{ a.appointment_date.strftime('%b %d') }}</span></div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endblock %}

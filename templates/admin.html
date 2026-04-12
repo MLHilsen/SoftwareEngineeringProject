@@ -1,361 +1,196 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow-lg border-0">
-            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                <h3 class="mb-0"><i class="bi bi-shield-lock"></i> Admin Panel</h3>
-                <span class="badge bg-light text-dark">Total Users: {{ users|length }}</span>
-            </div>
-            <div class="card-body">
-                <!-- Statistics Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">Total Users</h6>
-                                        <h2 class="mt-2 mb-0">{{ users|length }}</h2>
-                                    </div>
-                                    <i class="bi bi-people fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">Active Users</h6>
-                                        <h2 class="mt-2 mb-0">{{ users|selectattr('is_active', 'equalto', true)|list|length }}</h2>
-                                    </div>
-                                    <i class="bi bi-toggle-on fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-warning text-dark">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">Admins</h6>
-                                        <h2 class="mt-2 mb-0">{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</h2>
-                                    </div>
-                                    <i class="bi bi-shield fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-info text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">Active Sessions</h6>
-                                        <h2 class="mt-2 mb-0">{{ sessions|length }}</h2>
-                                    </div>
-                                    <i class="bi bi-session fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tabs -->
-                <ul class="nav nav-tabs" id="adminTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-                            <i class="bi bi-people"></i> Users Management
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
-                            <i class="bi bi-session"></i> Active Sessions
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
-                            <i class="bi bi-graph-up"></i> Statistics
-                        </button>
-                    </li>
-                </ul>
-                
-                <div class="tab-content mt-3" id="adminTabsContent">
-                    <!-- Users Management Tab -->
-                    <div class="tab-pane fade show active" id="users" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Full Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Phone</th>
-                                        <th>Status</th>
-                                        <th>Created</th>
-                                        <th>Last Login</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in users %}
-                                    <tr>
-                                        <td>{{ user.user_id }}</td>
-                                        <td>
-                                            <i class="bi bi-person-circle"></i>
-                                            {{ user.full_name }}
-                                        </td>
-                                        <td>{{ user.email }}</td>
-                                        <td>
-                                            <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-info{% endif %}">
-                                                <i class="bi {% if user.role == 'admin' %}bi-shield{% else %}bi-person{% endif %}"></i>
-                                                {{ user.role }}
-                                            </span>
-                                        </td>
-                                        <td>{{ user.phone or '—' }}</td>
-                                        <td>
-                                            {% if user.is_active %}
-                                            <span class="badge bg-success">Active</span>
-                                            {% else %}
-                                            <span class="badge bg-secondary">Inactive</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                                        <td>
-                                            {% if user.last_login %}
-                                                {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
-                                            {% else %}
-                                                <span class="text-muted">Never</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                {% if user.user_id != current_user.user_id %}
-                                                <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.user_id) }}" class="d-inline">
-                                                    <button type="submit" class="btn btn-sm {% if user.is_active %}btn-warning{% else %}btn-success{% endif %}" 
-                                                            title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
-                                                        <i class="bi {% if user.is_active %}bi-pause{% else %}bi-play{% endif %}"></i>
-                                                    </button>
-                                                </form>
-                                                
-                                                <form method="POST" action="{{ url_for('change_user_role', user_id=user.user_id) }}" class="d-inline">
-                                                    <input type="hidden" name="role" value="{% if user.role == 'admin' %}user{% else %}admin{% endif %}">
-                                                    <button type="submit" class="btn btn-sm btn-info" 
-                                                            title="Change to {% if user.role == 'admin' %}User{% else %}Admin{% endif %}">
-                                                        <i class="bi bi-arrow-repeat"></i>
-                                                    </button>
-                                                </form>
-                                                {% else %}
-                                                <button class="btn btn-sm btn-secondary" disabled>
-                                                    <i class="bi bi-person"></i> Current
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Active Sessions Tab -->
-                    <div class="tab-pane fade" id="sessions" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>User</th>
-                                        <th>IP Address</th>
-                                        <th>Device / Browser</th>
-                                        <th>Started</th>
-                                        <th>Expires</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for session in sessions %}
-                                    <tr>
-                                        <td>
-                                            <i class="bi bi-person"></i>
-                                            {{ session.user.full_name }}
-                                            <br>
-                                            <small class="text-muted">{{ session.user.email }}</small>
-                                        </td>
-                                        <td>{{ session.ip_address }}</td>
-                                        <td>
-                                            {% if 'Mobile' in session.user_agent %}
-                                                <i class="bi bi-phone"></i>
-                                            {% elif 'Windows' in session.user_agent %}
-                                                <i class="bi bi-windows"></i>
-                                            {% elif 'Mac' in session.user_agent %}
-                                                <i class="bi bi-apple"></i>
-                                            {% elif 'Linux' in session.user_agent %}
-                                                <i class="bi bi-ubuntu"></i>
-                                            {% else %}
-                                                <i class="bi bi-laptop"></i>
-                                            {% endif %}
-                                            {{ session.user_agent[:50] }}...
-                                        </td>
-                                        <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>{{ session.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>
-                                            {% if session.expires_at > now %}
-                                                <span class="badge bg-success">Active</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Expired</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">No active sessions found</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Statistics Tab -->
-                    <div class="tab-pane fade" id="stats" role="tabpanel">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="mb-0"><i class="bi bi-pie-chart"></i> User Distribution</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <canvas id="userChart" style="height: 300px; width: 100%;"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header bg-success text-white">
-                                        <h5 class="mb-0"><i class="bi bi-calendar"></i> Recent Activity</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <ul class="list-group">
-                                            {% for user in users[:5] %}
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                {{ user.full_name }}
-                                                <span class="badge bg-primary rounded-pill">
-                                                    {% if user.last_login %}
-                                                        {{ user.last_login.strftime('%Y-%m-%d') }}
-                                                    {% else %}
-                                                        Never
-                                                    {% endif %}
-                                                </span>
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<style>
+  .admin-tab-content { display:none; } .admin-tab-content.active { display:block; }
+  .tab-btn { border:none;background:transparent;padding:10px 20px;font-weight:500;border-bottom:3px solid transparent;cursor:pointer;transition:all .2s; }
+  .tab-btn.active { border-bottom-color:#e8845a;color:#e8845a; }
+  .admin-card { background:#fff;border-radius:16px;border:1px solid #e0d8cc;padding:24px; }
+  .status-dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+</style>
+
+<div style="background:linear-gradient(135deg,#2d2d2d,#4a3728);border-radius:16px;padding:32px;margin-bottom:24px;">
+  <h1 style="font-family:'Playfair Display',serif;color:#fff;">Admin Panel</h1>
+  <div class="d-flex gap-4 mt-2">
+    <div><span style="color:#f5c9a8;font-size:1.4rem;font-family:'Playfair Display',serif;">{{ users|length }}</span><div style="color:rgba(255,255,255,.5);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;">Users</div></div>
+    <div><span style="color:#f5c9a8;font-size:1.4rem;font-family:'Playfair Display',serif;">{{ pets|length }}</span><div style="color:rgba(255,255,255,.5);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;">Pets</div></div>
+    <div><span style="color:#f5c9a8;font-size:1.4rem;font-family:'Playfair Display',serif;">{{ applications|selectattr('status','eq','pending')|list|length }}</span><div style="color:rgba(255,255,255,.5);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;">Pending apps</div></div>
+  </div>
 </div>
 
-<!-- Chart.js for statistics -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if the canvas element exists
-    const canvas = document.getElementById('userChart');
-    if (!canvas) {
-        console.error('Canvas element not found');
-        return;
-    }
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Get statistics from Flask variables
-    const totalUsers = {{ users|length|tojson }};
-    const activeUsers = {{ users|selectattr('is_active', 'equalto', true)|list|length|tojson }};
-    const admins = {{ users|selectattr('role', 'equalto', 'admin')|list|length|tojson }};
-    
-    // Calculate derived values
-    const inactiveUsers = totalUsers - activeUsers;
-    const regularUsers = totalUsers - admins;
-    
-    // Debug output
-    console.log('Chart Data:', {
-        totalUsers,
-        activeUsers,
-        inactiveUsers,
-        admins,
-        regularUsers
-    });
-    
-    // Create chart
-    try {
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Active Users', 'Inactive Users', 'Admins', 'Regular Users'],
-                datasets: [{
-                    data: [activeUsers, inactiveUsers, admins, regularUsers],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',  // success green
-                        'rgba(108, 117, 125, 0.8)', // secondary gray
-                        'rgba(220, 53, 69, 0.8)',   // danger red
-                        'rgba(23, 162, 184, 0.8)'   // info blue
-                    ],
-                    borderColor: [
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(108, 117, 125, 1)',
-                        'rgba(220, 53, 69, 1)',
-                        'rgba(23, 162, 184, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            padding: 15
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error creating chart:', error);
-    }
-});
-</script>
+<div class="border-bottom mb-4">
+  <button class="tab-btn active" onclick="showTab('pets',this)">🐾 Pets</button>
+  <button class="tab-btn" onclick="showTab('apps',this)">📋 Applications</button>
+  <button class="tab-btn" onclick="showTab('users',this)">👥 Users</button>
+</div>
 
-<!-- Add this CSS to fix canvas display -->
-<style>
-canvas {
-    max-width: 100%;
-    height: auto !important;
+<!-- PETS TAB -->
+<div id="tab-pets" class="admin-tab-content active">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 style="font-family:'Playfair Display',serif;">All Pets</h5>
+    <button class="btn btn-sm" style="background:#e8845a;color:#fff;border-radius:20px;" data-bs-toggle="modal" data-bs-target="#addPetModal">+ Add Pet</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table" style="background:#fff;border-radius:12px;overflow:hidden;">
+      <thead style="background:#4a3728;color:#fff;">
+        <tr><th>Name</th><th>Species/Breed</th><th>Age</th><th>Status</th><th>Fee</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for pet in pets %}
+        <tr>
+          <td><strong>{{ pet.name }}</strong></td>
+          <td>{{ pet.species }} / {{ pet.breed }}</td>
+          <td>{{ pet.age }}yr</td>
+          <td><span class="badge" style="background:{% if pet.status=='available' %}#7a9e7e{% else %}#e8845a{% endif %};border-radius:100px;font-size:.7rem;">{{ pet.status }}</span></td>
+          <td>${{ "%.0f"|format(pet.adoption_fee or 0) }}</td>
+          <td>
+            <a href="{{ url_for('pet_detail', pet_id=pet.pet_id) }}" class="btn btn-xs btn-outline-secondary me-1" style="font-size:.75rem;border-radius:16px;padding:2px 10px;">View</a>
+            <button class="btn btn-xs" style="font-size:.75rem;border-radius:16px;padding:2px 10px;background:#f0ece6;border:none;" data-bs-toggle="modal" data-bs-target="#editPetModal{{ pet.pet_id }}">Edit</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- APPLICATIONS TAB -->
+<div id="tab-apps" class="admin-tab-content">
+  <h5 style="font-family:'Playfair Display',serif;" class="mb-3">All Applications</h5>
+  {% for app in applications %}
+  <div style="background:#fff;border-radius:12px;border:1px solid #e0d8cc;padding:20px;margin-bottom:12px;">
+    <div class="row align-items-center">
+      <div class="col-md-5">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge" style="background:{% if app.application_type=='adoption' %}#e8845a{% else %}#7a9e7e{% endif %};border-radius:100px;font-size:.7rem;">{{ app.application_type }}</span>
+          <strong>{{ app.applicant.full_name }}</strong> wants <strong>{{ app.pet.name }}</strong>
+        </div>
+        <small class="text-muted">Submitted {{ app.submitted_at.strftime('%b %d, %Y') }}{% if app.reason %} · "{{ app.reason[:60] }}…"{% endif %}</small>
+      </div>
+      <div class="col-md-3">
+        <span class="badge" style="background:{% if app.status=='approved' %}#7a9e7e{% elif app.status=='rejected' %}#e8845a{% elif app.status=='pending' %}#f0c96e;color:#5a4500{% else %}#ccc;color:#555{% endif %};border-radius:100px;padding:5px 12px;">{{ app.status }}</span>
+      </div>
+      <div class="col-md-4">
+        {% if app.status == 'pending' %}
+        <form method="POST" action="{{ url_for('review_application', app_id=app.application_id) }}" class="d-flex gap-2">
+          <input type="text" name="admin_notes" class="form-control form-control-sm" placeholder="Admin notes...">
+          <button name="status" value="approved" class="btn btn-sm" style="background:#7a9e7e;color:#fff;border-radius:20px;white-space:nowrap;">Approve</button>
+          <button name="status" value="rejected" class="btn btn-sm btn-outline-danger" style="border-radius:20px;white-space:nowrap;">Reject</button>
+        </form>
+        {% else %}
+        {% if app.admin_notes %}<small class="text-muted">Note: {{ app.admin_notes }}</small>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted">No applications yet.</p>
+  {% endfor %}
+</div>
+
+<!-- USERS TAB -->
+<div id="tab-users" class="admin-tab-content">
+  <h5 style="font-family:'Playfair Display',serif;" class="mb-3">All Users</h5>
+  <div class="table-responsive">
+    <table class="table" style="background:#fff;border-radius:12px;overflow:hidden;">
+      <thead style="background:#4a3728;color:#fff;"><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td><strong>{{ user.full_name }}</strong></td>
+          <td>{{ user.email }}</td>
+          <td>
+            {% if user.user_id != current_user.user_id %}
+            <form method="POST" action="{{ url_for('change_user_role', user_id=user.user_id) }}" class="d-inline">
+              <select name="role" onchange="this.form.submit()" class="form-select form-select-sm" style="width:90px;display:inline-block;">
+                <option value="user" {% if user.role=='user' %}selected{% endif %}>User</option>
+                <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin</option>
+              </select>
+            </form>
+            {% else %}<span class="badge" style="background:#e8845a;">{{ user.role }}</span>{% endif %}
+          </td>
+          <td><span class="status-dot" style="background:{% if user.is_active %}#7a9e7e{% else %}#e8845a{% endif %};"></span> {{ 'Active' if user.is_active else 'Inactive' }}</td>
+          <td><small class="text-muted">{{ user.created_at.strftime('%b %d, %Y') }}</small></td>
+          <td>
+            {% if user.user_id != current_user.user_id %}
+            <form method="POST" action="{{ url_for('toggle_user_status', user_id=user.user_id) }}" class="d-inline">
+              <button type="submit" class="btn btn-xs btn-outline-{% if user.is_active %}danger{% else %}success{% endif %}" style="font-size:.75rem;border-radius:16px;padding:2px 10px;">{{ 'Deactivate' if user.is_active else 'Activate' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Pet Modal -->
+<div class="modal fade" id="addPetModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#4a3728;color:#fff;"><h5 class="modal-title">Add New Pet</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="{{ url_for('admin_new_pet') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4"><label class="form-label">Name*</label><input type="text" name="name" class="form-control" required></div>
+            <div class="col-md-4"><label class="form-label">Species*</label><input type="text" name="species" class="form-control" placeholder="dog, cat..." required></div>
+            <div class="col-md-4"><label class="form-label">Breed*</label><input type="text" name="breed" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label">Age (years)*</label><input type="number" name="age" class="form-control" min="0" required></div>
+            <div class="col-md-3"><label class="form-label">Gender</label><select name="gender" class="form-select"><option>unknown</option><option>male</option><option>female</option></select></div>
+            <div class="col-md-3"><label class="form-label">Size</label><select name="size" class="form-select"><option value="">—</option><option>small</option><option>medium</option><option>large</option></select></div>
+            <div class="col-md-3"><label class="form-label">Color</label><input type="text" name="color" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Status</label><select name="status" class="form-select"><option>available</option><option>adopted</option><option>fostered</option></select></div>
+            <div class="col-md-6"><label class="form-label">Adoption Fee ($)</label><input type="number" name="adoption_fee" class="form-control" step="0.01" value="0"></div>
+            <div class="col-12"><label class="form-label">Temperament</label><input type="text" name="temperament" class="form-control" placeholder="friendly, calm, playful..."></div>
+            <div class="col-12"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3"></textarea></div>
+            <div class="col-12"><label class="form-label">Special Needs</label><textarea name="special_needs" class="form-control" rows="2"></textarea></div>
+            <div class="col-12"><label class="form-label">Image URL</label><input type="url" name="image" class="form-control" placeholder="https://..."></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn" style="background:#e8845a;color:#fff;">Add Pet</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% for pet in pets %}
+<div class="modal fade" id="editPetModal{{ pet.pet_id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#4a3728;color:#fff;"><h5 class="modal-title">Edit {{ pet.name }}</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="{{ url_for('admin_edit_pet', pet_id=pet.pet_id) }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ pet.name }}" required></div>
+            <div class="col-md-4"><label class="form-label">Species</label><input type="text" name="species" class="form-control" value="{{ pet.species }}" required></div>
+            <div class="col-md-4"><label class="form-label">Breed</label><input type="text" name="breed" class="form-control" value="{{ pet.breed }}" required></div>
+            <div class="col-md-3"><label class="form-label">Age</label><input type="number" name="age" class="form-control" value="{{ pet.age }}"></div>
+            <div class="col-md-3"><label class="form-label">Gender</label><select name="gender" class="form-select"><option {% if pet.gender=='unknown' %}selected{% endif %}>unknown</option><option {% if pet.gender=='male' %}selected{% endif %}>male</option><option {% if pet.gender=='female' %}selected{% endif %}>female</option></select></div>
+            <div class="col-md-3"><label class="form-label">Size</label><select name="size" class="form-select"><option value="">—</option><option {% if pet.size=='small' %}selected{% endif %}>small</option><option {% if pet.size=='medium' %}selected{% endif %}>medium</option><option {% if pet.size=='large' %}selected{% endif %}>large</option></select></div>
+            <div class="col-md-3"><label class="form-label">Status</label><select name="status" class="form-select"><option {% if pet.status=='available' %}selected{% endif %}>available</option><option {% if pet.status=='adopted' %}selected{% endif %}>adopted</option><option {% if pet.status=='fostered' %}selected{% endif %}>fostered</option></select></div>
+            <div class="col-md-6"><label class="form-label">Color</label><input type="text" name="color" class="form-control" value="{{ pet.color or '' }}"></div>
+            <div class="col-md-6"><label class="form-label">Adoption Fee ($)</label><input type="number" name="adoption_fee" class="form-control" step="0.01" value="{{ pet.adoption_fee or 0 }}"></div>
+            <div class="col-12"><label class="form-label">Temperament</label><input type="text" name="temperament" class="form-control" value="{{ pet.temperament or '' }}"></div>
+            <div class="col-12"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3">{{ pet.description or '' }}</textarea></div>
+            <div class="col-12"><label class="form-label">Special Needs</label><textarea name="special_needs" class="form-control" rows="2">{{ pet.special_needs or '' }}</textarea></div>
+            <div class="col-12"><label class="form-label">Image URL</label><input type="url" name="image" class="form-control" value="{{ pet.image or '' }}"></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn" style="background:#e8845a;color:#fff;">Save Changes</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
 }
-</style>
+</script>
+{% endblock %}
 {% endblock %}
